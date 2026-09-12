@@ -1,0 +1,19 @@
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Raw data
+data/raw/
+
+# Windows system files
+Thumbs.db
+Desktop.ini
+
+# VS Code local settings
+.vscode/
