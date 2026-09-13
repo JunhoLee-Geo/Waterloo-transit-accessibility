@@ -2,37 +2,29 @@
 
 ## Overview
 
-This project analyzes public transit accessibility across Waterloo Region, Ontario by combining Grand River Transit (GRT) schedule and stop data with 2021 Census population data and municipal boundaries.
+This project analyzes public transit accessibility across Waterloo Region using Grand River Transit (GRT) data and 2021 Census population data.
 
-The analysis addresses two main questions:
+I used Python and GeoPandas to estimate how many residents live within 400 m and 800 m of GRT stops and to identify areas with limited transit coverage. I also used GTFS schedule data to compare access to nearby transit with access to frequent weekday service.
 
-1. How many residents live within 400 m or 800 m of existing GRT transit stops?
-2. How does access to frequent weekday transit service differ across municipalities?
+The analysis combines transit stops and schedules, Census dissemination areas, population data, and municipal boundaries.
 
-The project uses Python-based geospatial analysis to integrate GTFS transit data, Census dissemination areas, population data, and municipal boundaries.
+## Key Results
 
----
+About **74.6%** of Waterloo Region's population is estimated to live within **400 m** of a GRT stop, and **86.3%** within **800 m**. This leaves about **13.7%** of the population more than 800 m from a stop.
 
-## Key Findings
+Using both transit coverage and population, I identified **52 priority underserved dissemination areas (DAs)**. These areas contain an estimated **49,712 residents** living more than 800 m from transit.
 
-- Approximately **74.6%** of Waterloo Region residents are estimated to live within **400 m** of a GRT stop.
-- Approximately **86.3%** are estimated to live within **800 m** of a GRT stop.
-- Approximately **13.7%** are estimated to live more than **800 m** from a GRT stop.
-- **52 dissemination areas (DAs)** were identified as priority underserved areas.
-- These priority areas contain an estimated **49,712 residents** living beyond 800 m of transit.
-- Only approximately **28.1%** of the regional population is estimated to live within 400 m of a stop classified as high-frequency under this analysis.
+The frequency analysis showed a larger difference. While 74.6% of residents are estimated to live within 400 m of any GRT stop, only about **28.1%** live within 400 m of a stop classified as high-frequency in this project.
 
 Among the three cities:
 
-| Municipality | Within 400 m of Any Stop | Within 400 m of High-Frequency Stop |
+| Municipality | Any Stop within 400 m | High-Frequency Stop within 400 m |
 |---|---:|---:|
 | Cambridge | 83.8% | 14.8% |
 | Kitchener | 82.9% | 35.9% |
 | Waterloo | 81.0% | 42.9% |
 
-These results demonstrate that **physical proximity to transit does not necessarily mean access to frequent transit service**.
-
----
+Cambridge has the highest overall stop coverage of the three cities, but much lower high-frequency coverage than Kitchener and Waterloo. Waterloo has slightly lower overall stop coverage, but the highest high-frequency coverage of the three.
 
 ## Visualizations
 
@@ -40,33 +32,31 @@ These results demonstrate that **physical proximity to transit does not necessar
 
 ![Transit Proximity vs High-Frequency Service](figures/proximity_vs_frequency_access.png)
 
-This comparison highlights the difference between having a transit stop nearby and having access to frequent weekday service.
+This figure compares the share of the population within 400 m of any GRT stop with the share within 400 m of a high-frequency stop.
 
 ### Municipality Transit Accessibility
 
 ![Municipality Transit Accessibility](figures/municipality_transit_accessibility.png)
 
-Transit proximity is substantially higher in Cambridge, Kitchener, and Waterloo than in the surrounding townships.
+Transit coverage is much higher in Cambridge, Kitchener, and Waterloo than in the surrounding townships.
 
 ### Priority Underserved Areas
 
 ![Priority Underserved Areas](figures/priority_underserved_areas.png)
 
-Priority underserved dissemination areas were identified using both transit coverage and estimated population beyond 800 m.
+Priority underserved DAs were identified using both 800 m transit coverage and the estimated population living beyond 800 m.
 
 ### Top 10 Underserved Dissemination Areas
 
 ![Top 10 Underserved DAs](figures/top10_underserved_das.png)
 
-This figure highlights the dissemination areas with the largest estimated populations living beyond 800 m of transit.
-
----
+This figure shows the ten DAs with the largest estimated populations living more than 800 m from a GRT stop. The labels are Statistics Canada dissemination area identifiers (DAUIDs).
 
 ## Data Sources
 
 ### Grand River Transit (GRT)
 
-GRT static GTFS data was used to obtain transit stop locations, routes, trips, stop times, and service calendar information.
+I used GRT's static GTFS data for stop locations, routes, trips, scheduled stop times, and service calendar information.
 
 Official source:
 
@@ -74,9 +64,9 @@ https://www.grt.ca/about-grt/open-data/
 
 ### Statistics Canada — 2021 Census
 
-2021 Census dissemination area boundaries and population data were used to estimate the number of residents with access to transit.
+I used 2021 Census dissemination area boundaries and population data to estimate the number of residents within the transit coverage areas.
 
-Official dissemination area boundary files:
+Dissemination area boundary files:
 
 https://www150.statcan.gc.ca/n1/en/catalogue/92-169-X2021001
 
@@ -88,68 +78,54 @@ The final study area contains **766 dissemination areas** with a total 2021 Cens
 
 ### Region of Waterloo
 
-Municipal boundary data was obtained from the Region of Waterloo GIS services and used to compare accessibility across:
+Municipal boundary data was used to compare transit accessibility across:
 
-- City of Cambridge
-- City of Kitchener
-- City of Waterloo
-- Township of Wilmot
-- Township of Woolwich
-- Township of North Dumfries
-- Township of Wellesley
+- Cambridge
+- Kitchener
+- Waterloo
+- Wilmot
+- Woolwich
+- North Dumfries
+- Wellesley
 
-GIS service used in this analysis:
+GIS service:
 
 https://gis.regionofwaterloo.ca/wamap/rest/services/HousingCatalogue/MapServer/17
 
----
+## Method
 
-## Methodology
+### Transit Stop Processing
 
-### 1. Transit Stop Processing
+I loaded the GRT GTFS stop data and kept the physical boarding locations needed for the analysis.
 
-GRT GTFS stop data was loaded and filtered to retain physical boarding locations.
-
-Stop coordinates were converted into a GeoDataFrame and projected to:
+The stop coordinates were converted to a GeoDataFrame and projected to:
 
 **EPSG:26917 — NAD83 / UTM Zone 17N**
 
-Using a projected coordinate reference system allowed distances and areas to be calculated in metres.
+I used a projected coordinate system so that distance and area calculations could be done in metres.
 
----
+### Transit Coverage
 
-### 2. Transit Proximity Analysis
+I created **400 m** and **800 m** straight-line buffers around GRT stops.
 
-Two straight-line accessibility buffers were created around GRT stops:
+Overlapping buffers were dissolved before calculating coverage so the same area would not be counted more than once. I then intersected the coverage areas with the Census dissemination areas.
 
-- **400 m**
-- **800 m**
+### Population Estimation
 
-Overlapping stop buffers were dissolved before calculating coverage so that overlapping service areas would not be double-counted.
-
-The resulting transit coverage areas were intersected with 2021 Census dissemination areas.
-
----
-
-### 3. Population Estimation
-
-Population within transit coverage areas was estimated using area weighting.
+Census population is reported for an entire DA rather than for individual locations within it, so I used area weighting to estimate the population inside each transit coverage area.
 
 ```text
-Estimated covered population
-=
+Estimated covered population =
 DA population × (intersection area / total DA area)
 ```
 
-For example, if 60% of a dissemination area's land area falls within the 400 m transit buffer, approximately 60% of that DA's population is assumed to have 400 m transit access.
+For example, if 60% of a DA's area falls within the 400 m buffer, the analysis estimates that 60% of its population has transit access within 400 m.
 
-This provides an estimate rather than an exact count because population is not necessarily distributed evenly throughout each dissemination area.
+This is an estimate because population is not necessarily distributed evenly within each DA.
 
----
+### Priority Underserved Areas
 
-### 4. Priority Underserved Areas
-
-A dissemination area was classified as a **priority underserved area** when it met both conditions:
+For this project, I classified a DA as priority underserved when it met both of the following conditions:
 
 ```text
 Estimated 800 m transit coverage < 50%
@@ -159,90 +135,46 @@ AND
 Estimated population beyond 800 m >= 500
 ```
 
-Using this definition:
+Using these criteria, **52 DAs** were identified. Together, they contain an estimated **49,712 residents** living more than 800 m from a GRT stop.
 
-- **52 dissemination areas** were identified
-- approximately **49,712 residents** in these areas were estimated to live beyond 800 m of transit
+## Service Frequency
 
-The analysis shows a particularly strong urban-rural accessibility gap across Waterloo Region.
+Distance to a stop does not show how often transit is available, so I also used the GTFS schedule to look at weekday daytime service frequency.
 
----
+I used **Wednesday, September 9, 2026** as a representative weekday from the available GTFS service calendar.
 
-## Service Frequency Analysis
-
-Transit proximity alone does not describe the quality or intensity of transit service.
-
-GTFS schedule data was therefore used to estimate weekday daytime service frequency.
-
-### Representative Service Day
-
-The analysis uses:
-
-**Wednesday, September 9, 2026**
-
-as a representative weekday from the available GTFS service calendar.
-
-### Daytime Period
-
-Daytime service was defined as:
+The daytime period was defined as:
 
 ```text
 07:00 <= scheduled stop time < 19:00
 ```
 
-This represents a 12-hour daytime service window.
+For each stop, I counted scheduled stop events during this 12-hour period and calculated the average number of scheduled stop events per hour.
 
-For each stop, scheduled stop events during this period were counted and converted to:
-
-```text
-scheduled stop events per hour
-```
-
----
-
-## Service Frequency Classification
-
-Stops were classified using the following analysis-specific thresholds:
+For this project, stops were grouped into three categories:
 
 ```text
 Low:       < 2 scheduled stop events/hour
-
-Moderate:  2 to 4 scheduled stop events/hour
-
+Moderate:  2–4 scheduled stop events/hour
 High:      > 4 scheduled stop events/hour
 ```
 
-These categories were created specifically for this project and **are not official GRT service classifications**.
+These thresholds were created for this analysis and are **not official GRT service classifications**.
 
-Of the stops with scheduled daytime service:
+Among stops with scheduled daytime service:
 
-- approximately **17.0%** were classified as Low
-- approximately **65.2%** were classified as Moderate
-- approximately **17.8%** were classified as High
+- 17.0% were classified as Low
+- 65.2% were classified as Moderate
+- 17.8% were classified as High
 
----
+I then repeated the 400 m accessibility analysis using only the high-frequency stops.
 
-## High-Frequency Transit Accessibility
-
-A second 400 m accessibility analysis was performed using only stops classified as high-frequency.
-
-The result was compared with access to any GRT stop.
-
-### Region-Wide Results
+Region-wide:
 
 ```text
-Population within 400 m of any GRT stop:
-74.6%
-
-Population within 400 m of a high-frequency stop:
-28.1%
+Population within 400 m of any GRT stop:           74.6%
+Population within 400 m of a high-frequency stop:  28.1%
 ```
-
-This demonstrates an important distinction:
-
-> A resident may live close to a transit stop without having access to frequent transit service.
-
----
 
 ## Municipality Comparison
 
@@ -256,11 +188,17 @@ This demonstrates an important distinction:
 | North Dumfries | 0.1% | 0.0% |
 | Wellesley | 0.0% | 0.0% |
 
-Cambridge has the highest estimated proximity to any transit stop among the three cities, but substantially lower high-frequency access than Waterloo or Kitchener.
+The three cities have much higher stop coverage than the surrounding townships.
 
-Waterloo has the highest estimated high-frequency accessibility of the three cities despite having slightly lower overall stop proximity.
+There are also noticeable differences within the urban areas. Cambridge has the highest access to any stop among the three cities but much lower high-frequency access. Waterloo has the highest high-frequency accessibility at 42.9%.
 
----
+## What I Would Look At Next
+
+The results point to two different transit issues: areas where stops are not nearby and areas where stops are available but service is less frequent.
+
+The **52 priority underserved DAs** could be a starting point for looking at where route extensions, new stops, or other service changes may be worth studying. Areas that already have good stop coverage but lower-frequency service could instead be examined for possible service frequency improvements.
+
+This analysis alone is not enough to recommend exact stop locations or route changes. A more detailed study could include the pedestrian street network, ridership, travel times, destinations, and the existing route network.
 
 ## Project Structure
 
@@ -296,9 +234,7 @@ Waterloo-transit-accessibility/
 └── README.md
 ```
 
----
-
-## Technologies Used
+## Tools
 
 - Python
 - pandas
@@ -310,47 +246,39 @@ Waterloo-transit-accessibility/
 - Jupyter Notebook
 - GTFS
 - GIS spatial analysis
-- Spatial joins
-- Buffer analysis
-- Polygon intersections
-- Area-weighted population estimation
+- spatial joins
+- buffer analysis
+- polygon intersections
+- area-weighted population estimation
 
----
+## Reproducing the Analysis
 
-## Reproducibility
-
-### 1. Clone the repository
+Clone the repository:
 
 ```bash
-git clone https://github.com/j200292918/Waterloo-transit-accessibility.git
+git clone https://github.com/JunhoLee-Geo/Waterloo-transit-accessibility.git
 cd Waterloo-transit-accessibility
 ```
 
-### 2. Create a virtual environment
+Create a virtual environment:
 
 ```bash
 python -m venv .venv
 ```
 
-### 3. Install dependencies
+Install the required packages:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Obtain the raw datasets
-
-Raw datasets are excluded from this repository.
-
-Download the required data from the official sources listed in the **Data Sources** section and place them in the appropriate directories under:
+Raw datasets are not included in the repository. Download them from the sources listed above and place them under:
 
 ```text
 data/raw/
 ```
 
-### 5. Run the notebooks
-
-Run the notebooks in the following order:
+Then run the notebooks in order:
 
 ```text
 00_environment_test.ipynb
@@ -362,45 +290,31 @@ Run the notebooks in the following order:
 06_service_frequency.ipynb
 ```
 
----
-
 ## Limitations
 
-This analysis has several important limitations.
+**Straight-line distance:** The 400 m and 800 m buffers do not follow the actual pedestrian network. Roads, highways, rivers, crossings, fences, and other barriers can affect real walking distance.
 
-**Straight-line distance:**  
-The 400 m and 800 m accessibility areas are Euclidean buffers. They do not account for the actual pedestrian network, sidewalks, crossings, highways, rivers, fences, or other physical barriers.
+**Population estimation:** Area weighting assumes that population is evenly distributed within each DA. Actual residential locations may differ from these estimates.
 
-**Area-weighted population estimation:**  
-Population is assumed to be uniformly distributed within each dissemination area. Actual residential locations may therefore differ from the estimates.
+**Scheduled service:** The frequency analysis uses scheduled GTFS data, so delays, cancellations, and actual service reliability are not included.
 
-**Scheduled rather than observed service:**  
-Frequency calculations use scheduled GTFS stop events rather than observed vehicle arrivals, delays, cancellations, or reliability.
+**Stop events:** Scheduled stop events can include different routes and directions, so they should not be interpreted as the actual waiting time for a specific destination.
 
-**Stop events are not destination-specific frequency:**  
-Scheduled stop events may represent multiple routes and directions. They should not be interpreted as the effective headway to a specific destination.
+**Frequency thresholds:** The Low, Moderate, and High categories were created for this project and are not official GRT classifications.
 
-**Analysis-specific frequency threshold:**  
-The definition of high-frequency service as more than four scheduled stop events per hour was created for this analysis and is not an official GRT classification.
+**Different reference years:** Population data comes from the 2021 Census, while transit service is based on the September 2026 GTFS schedule.
 
-**Different reference years:**  
-Population distribution is based on the **2021 Census**, while transit service reflects the **September 2026 GTFS schedule**. The project therefore compares the latest complete small-area Census baseline used in the analysis with a more recent transit network.
+## Possible Improvements
 
----
+Possible next steps include:
 
-## Future Improvements
-
-Potential extensions of this analysis include:
-
-- pedestrian street-network accessibility instead of straight-line buffers
-- travel-time accessibility analysis
-- access to employment, education, and essential services
-- peak vs. off-peak service comparisons
+- pedestrian network distance instead of straight-line buffers
+- travel-time accessibility
+- access to jobs, schools, and essential services
+- peak and off-peak service comparisons
 - weekend service analysis
-- population-weighted service frequency measures
-- comparison across multiple GTFS service periods
-
----
+- population-weighted service frequency
+- comparisons between different GTFS service periods
 
 ## Author
 
